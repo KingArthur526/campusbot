@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+import ollama
 import httpx
 
 app = FastAPI()
@@ -13,18 +14,13 @@ class Ask(BaseModel):
 
 @app.post("/chat")
 async def chat(body: Ask):
-    payload = {
-        "model":"llama3.2",
-        "prompt":body.question,
-        "stream":False
-        }
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(
-            "http://localhost:11434/api/generate",
-            json = payload,
-            timeout = 30,
-            )
+    client = ollama.Client("http://localhost:11434")
     
-    answer = resp.json().get("response", "")
-    return {"answer": answer}
+    prompt = f"""Context: {"Shraddha is a college girl. She is extremely adventurous and meets a talking dog on the way to college one day"} Question:{body.question}"""
+
+    response = client.generate(
+        model = "llama3.2",
+        prompt=prompt
+    )
     
+    return {"Answer": response.response}
